@@ -170,10 +170,13 @@ public class c6_CombiningPublishers extends CombiningPublishersBase {
      */
     @Test
     public void mail_box_switcher() {
-        //todo: feel free to change code as you need
-        Flux<Message> myMail = null;
-        mailBoxPrimary();
-        mailBoxSecondary();
+        Flux<Message> myMail = mailBoxPrimary().switchOnFirst((signal, flux) -> {
+            Message m = signal.get();
+            if (m.metaData.equals("spam")) {
+                return mailBoxSecondary();
+            }
+            return flux;
+        });
 
         //don't change below this line
         StepVerifier.create(myMail)
@@ -193,11 +196,7 @@ public class c6_CombiningPublishers extends CombiningPublishersBase {
      */
     @Test
     public void instant_search() {
-        //todo: feel free to change code as you need
-        autoComplete(null);
-        Flux<String> suggestions = userSearchInput()
-                //todo: use one operator only
-                ;
+        Flux<String> suggestions = userSearchInput().switchMap(this::autoComplete);
 
         //don't change below this line
         StepVerifier.create(suggestions)
@@ -212,14 +211,11 @@ public class c6_CombiningPublishers extends CombiningPublishersBase {
      * If all operations have been executed successfully return boolean value `true`.
      */
     @Test
-    public void prettify() {
-        //todo: feel free to change code as you need
-        //todo: use when,and,then...
-        Mono<Boolean> successful = null;
-
-        openFile();
-        writeToFile("0x3522285912341");
-        closeFile();
+    public void prettify() { // Finished here
+        Mono<Boolean> successful = Mono.when(openFile())
+            .then(writeToFile("0x3522285912341"))
+            .and(closeFile())
+            .then(Mono.just(true));
 
         //don't change below this line
         StepVerifier.create(successful)
