@@ -309,11 +309,17 @@ public class c6_CombiningPublishers extends CombiningPublishersBase {
     //only read from sourceRef
     AtomicReference<String> sourceRef = new AtomicReference<>("X");
 
-    //todo: implement this method based on instructions
     public Mono<String> chooseSource() {
-        sourceA(); //<- choose if sourceRef == "A"
-        sourceB(); //<- choose if sourceRef == "B"
-        return Mono.empty(); //otherwise, return empty
+        return Mono.fromSupplier(sourceRef::get)
+            .flatMap(ref -> {
+                if (ref.equals("A")) {
+                    return sourceA();
+                } else if (ref.equals("B")) {
+                    return sourceB();
+                } else {
+                    return Mono.empty();
+                }
+            });
     }
 
     @Test
@@ -343,10 +349,7 @@ public class c6_CombiningPublishers extends CombiningPublishersBase {
     public void cleanup() {
         BlockHound.install(); //don't change this line, blocking = cheating!
 
-        //todo: feel free to change code as you need
-        Flux<String> stream = StreamingConnection.startStreaming()
-                                                 .flatMapMany(Function.identity());
-        StreamingConnection.closeConnection();
+        Flux<String> stream = Flux.usingWhen(StreamingConnection.startStreaming(), n -> n, tr -> StreamingConnection.closeConnection());
 
         //don't change below this line
         StepVerifier.create(stream)
