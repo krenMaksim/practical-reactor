@@ -1,4 +1,5 @@
-import org.junit.jupiter.api.*;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Test;
 import org.reactivestreams.Subscription;
 import reactor.core.Exceptions;
 import reactor.core.publisher.BaseSubscriber;
@@ -14,6 +15,7 @@ import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
+import java.util.stream.LongStream;
 
 /**
  * Backpressure is a mechanism that allows a consumer to signal to a producer that it is ready receive data.
@@ -46,9 +48,7 @@ public class c10_Backpressure extends BackpressureBase {
     @Test
     public void request_and_demand() {
         CopyOnWriteArrayList<Long> requests = new CopyOnWriteArrayList<>();
-        Flux<String> messageStream = messageStream1()
-                //todo: change this line only
-                ;
+        Flux<String> messageStream = messageStream1().doOnRequest(requests::add);
 
         StepVerifier.create(messageStream, StepVerifierOptions.create().initialRequest(0))
                     .expectSubscription()
@@ -70,9 +70,8 @@ public class c10_Backpressure extends BackpressureBase {
     @Test
     public void limited_demand() {
         CopyOnWriteArrayList<Long> requests = new CopyOnWriteArrayList<>();
-        Flux<String> messageStream = messageStream2()
-                //todo: do your changes here
-                ;
+        Flux<String> messageStream = messageStream2().doOnRequest(requests::add)
+            .limitRate(1);
 
         StepVerifier.create(messageStream, StepVerifierOptions.create().initialRequest(0))
                     .expectSubscription()
@@ -94,7 +93,11 @@ public class c10_Backpressure extends BackpressureBase {
     @Test
     public void uuid_generator() {
         Flux<UUID> uuidGenerator = Flux.create(sink -> {
-            //todo: do your changes here
+            LongStream.rangeClosed(1, sink.requestedFromDownstream())
+                .forEach(i -> {
+                    sink.next(UUID.randomUUID());
+                });
+            sink.complete();
         });
 
         StepVerifier.create(uuidGenerator
@@ -116,8 +119,7 @@ public class c10_Backpressure extends BackpressureBase {
     @Test
     public void pressure_is_too_much() {
         Flux<String> messageStream = messageStream3()
-                //todo: change this line only
-                ;
+            .onBackpressureError();
 
         StepVerifier.create(messageStream, StepVerifierOptions.create()
                                                               .initialRequest(0))
@@ -137,8 +139,7 @@ public class c10_Backpressure extends BackpressureBase {
     @Test
     public void u_wont_brake_me() {
         Flux<String> messageStream = messageStream4()
-                //todo: change this line only
-                ;
+            .onBackpressureBuffer();
 
         StepVerifier.create(messageStream, StepVerifierOptions.create()
                                                               .initialRequest(0))
@@ -174,12 +175,15 @@ public class c10_Backpressure extends BackpressureBase {
                     @Override
                     protected void hookOnSubscribe(Subscription subscription) {
                         sub.set(subscription);
+                        subscription.request(10);
                     }
 
                     @Override
                     protected void hookOnNext(String s) {
                         System.out.println(s);
-                        count.incrementAndGet();
+                        if(count.incrementAndGet() ==10 ) {
+                            sub.get().cancel();
+                        }
                     }
                     //-----------------------------------------------------
                 });
