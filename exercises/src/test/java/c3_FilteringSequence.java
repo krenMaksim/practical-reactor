@@ -27,6 +27,7 @@ public class c3_FilteringSequence extends FilteringSequenceBase {
     @Test
     public void girls_are_made_of_sugar_and_spice() {
         Flux<String> shortListed = popular_girl_names_service()
+            .filter( name -> name.length() <= 4)
                 //todo: change this line only
                 ;
 
@@ -41,8 +42,7 @@ public class c3_FilteringSequence extends FilteringSequenceBase {
      */
     @Test
     public void needle_in_a_haystack() {
-        Flux<String> strings = null;
-        mashed_data_service()
+        Flux<String> strings =  mashed_data_service().ofType(String.class)
                 //todo: change this line only
                 ;
 
@@ -56,7 +56,7 @@ public class c3_FilteringSequence extends FilteringSequenceBase {
      */
     @Test
     public void economical() {
-        Flux<String> items = duplicated_records_service()
+        Flux<String> items = duplicated_records_service().distinct()
                 //todo: change this line only, use only one operator
                 ;
 
