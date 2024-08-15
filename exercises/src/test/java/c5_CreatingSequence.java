@@ -6,6 +6,7 @@ import reactor.test.StepVerifier;
 import java.time.Duration;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.concurrent.Callable;
 import java.util.concurrent.CompletableFuture;
@@ -257,20 +258,36 @@ public class c5_CreatingSequence {
      */
     @Test
     public void generate_programmatically() {
+        AtomicInteger storage = new AtomicInteger();
 
         Flux<Integer> generateFlux = Flux.generate(sink -> {
+            if (storage.intValue() <= 5) {
+                sink.next(storage.getAndIncrement());
+            } else {
+                sink.complete();
+            }
             //todo: fix following code so it emits values from 0 to 5 and then completes
         });
 
         //------------------------------------------------------
+        AtomicInteger storage2 = new AtomicInteger();
 
         Flux<Integer> createFlux = Flux.create(sink -> {
+            while (storage2.intValue() <= 5) {
+                sink.next(storage2.getAndIncrement());
+            }
+            sink.complete();
             //todo: fix following code so it emits values from 0 to 5 and then completes
         });
 
         //------------------------------------------------------
+        AtomicInteger storage3 = new AtomicInteger();
 
         Flux<Integer> pushFlux = Flux.push(sink -> {
+            while (storage3.intValue() <= 5) {
+                sink.next(storage3.getAndIncrement());
+            }
+            sink.complete();
             //todo: fix following code so it emits values from 0 to 5 and then completes
         });
 
