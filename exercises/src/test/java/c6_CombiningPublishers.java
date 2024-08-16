@@ -223,7 +223,10 @@ public class c6_CombiningPublishers extends CombiningPublishersBase {
     public void prettify() {
         //todo: feel free to change code as you need
         //todo: use when,and,then...
-        Mono<Boolean> successful = null;
+        Mono<Boolean> successful = Mono.when(openFile())
+            .then(writeToFile("0x3522285912341"))
+            .and(closeFile())
+            .thenReturn(true);
 
         openFile();
         writeToFile("0x3522285912341");
@@ -245,9 +248,7 @@ public class c6_CombiningPublishers extends CombiningPublishersBase {
     @Test
     public void one_to_n() {
         //todo: feel free to change code as you need
-        Flux<String> fileLines = null;
-        openFile();
-        readFile();
+        Flux<String> fileLines = openFile().thenMany(readFile());
 
         StepVerifier.create(fileLines)
                     .expectNext("0x1", "0x2", "0x3")
@@ -261,9 +262,9 @@ public class c6_CombiningPublishers extends CombiningPublishersBase {
     @Test
     public void acid_durability() {
         //todo: feel free to change code as you need
-        Flux<String> committedTasksIds = null;
-        tasksToExecute();
-        commitTask(null);
+        Flux<String> committedTasksIds = tasksToExecute().concatMap(task -> {
+            return task.flatMap(taskId -> Mono.when(commitTask(taskId)).thenReturn(taskId));
+        });
 
         //don't change below this line
         StepVerifier.create(committedTasksIds)
@@ -282,8 +283,7 @@ public class c6_CombiningPublishers extends CombiningPublishersBase {
     public void major_merger() {
         //todo: feel free to change code as you need
         Flux<String> microsoftBlizzardCorp =
-                microsoftTitles();
-        blizzardTitles();
+                microsoftTitles().mergeWith(blizzardTitles());
 
         //don't change below this line
         StepVerifier.create(microsoftBlizzardCorp)
@@ -308,8 +308,9 @@ public class c6_CombiningPublishers extends CombiningPublishersBase {
     public void car_factory() {
         //todo: feel free to change code as you need
         Flux<Car> producedCars = null;
-        carChassisProducer();
-        carEngineProducer();
+        producedCars = Flux.zip(carChassisProducer(),carEngineProducer()).map(touple -> {
+           return new Car(touple.getT1(), touple.getT2());
+        });
 
         //don't change below this line
         StepVerifier.create(producedCars)
@@ -330,9 +331,15 @@ public class c6_CombiningPublishers extends CombiningPublishersBase {
 
     //todo: implement this method based on instructions
     public Mono<String> chooseSource() {
-        sourceA(); //<- choose if sourceRef == "A"
-        sourceB(); //<- choose if sourceRef == "B"
-        return Mono.empty(); //otherwise, return empty
+        return  Mono.just(sourceRef).flatMap(ref -> {
+            if (ref.get().equals("A")) {
+                return  sourceA();
+            } else if (ref.get().equals("B")) {
+                return  sourceB();
+            }else {
+                return  Mono.empty();
+            }
+        });
     }
 
     @Test
@@ -363,9 +370,18 @@ public class c6_CombiningPublishers extends CombiningPublishersBase {
         BlockHound.install(); //don't change this line, blocking = cheating!
 
         //todo: feel free to change code as you need
-        Flux<String> stream = StreamingConnection.startStreaming()
-                                                 .flatMapMany(Function.identity());
-        StreamingConnection.closeConnection();
+        // provided by me. It works by it is confusing
+        Flux<String> stream =  StreamingConnection.startStreaming()
+            .flatMapMany(list -> {
+                return StreamingConnection.closeConnection().thenReturn(list);
+            }).flatMap(Function.identity());
+
+        // here is a solution from answers
+        stream = Flux.usingWhen(
+            StreamingConnection.startStreaming(), //resource supplier -> supplies Flux from Mono
+            n -> n,//resource closure  -> closure in this case is same as Flux completion
+            tr -> StreamingConnection.closeConnection()//<-async complete, executes asynchronously after closure
+        );
 
         //don't change below this line
         StepVerifier.create(stream)
