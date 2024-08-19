@@ -82,10 +82,14 @@ public class c8_Sinks extends SinksBase {
     @Test
     public void it_gets_crowded() {
         //todo: feel free to change code as you need
-        Flux<Integer> measurements = null;
+        Sinks.Many many = Sinks.<Integer>many().multicast().onBackpressureBuffer();
+
+        Flux<Integer> measurements = many.asFlux();
         submitOperation(() -> {
 
             List<Integer> measures_readings = get_measures_readings(); //don't change this line
+            measures_readings.forEach(item -> many.emitNext(item, Sinks.EmitFailureHandler.FAIL_FAST));
+            many.tryEmitComplete();
         });
 
         //don't change code below
