@@ -34,10 +34,13 @@ public class c8_Sinks extends SinksBase {
     @Test
     public void single_shooter() {
         //todo: feel free to change code as you need
-        Mono<Boolean> operationCompleted = null;
+        Sinks.One one = Sinks.<Boolean>one();
+
+        Mono<Boolean> operationCompleted = one.asMono();
         submitOperation(() -> {
 
             doSomeWork(); //don't change this line
+            one.emitValue(true, Sinks.EmitFailureHandler.FAIL_FAST);
         });
 
         //don't change code below
@@ -55,10 +58,14 @@ public class c8_Sinks extends SinksBase {
     @Test
     public void single_subscriber() {
         //todo: feel free to change code as you need
-        Flux<Integer> measurements = null;
+        Sinks.Many many = Sinks.<Integer>many().unicast().onBackpressureBuffer();
+
+        Flux<Integer> measurements = many.asFlux();
         submitOperation(() -> {
 
             List<Integer> measures_readings = get_measures_readings(); //don't change this line
+            measures_readings.forEach(item -> many.emitNext(item, Sinks.EmitFailureHandler.FAIL_FAST));
+            many.tryEmitComplete();
         });
 
         //don't change code below
