@@ -230,6 +230,11 @@ public class c7_ErrorHandling extends ErrorHandlingBase {
         Flux<String> alerts = Flux.range(1, Integer.MAX_VALUE)
             .flatMap(i -> nodeAlerts().switchIfEmpty(nodeAlerts().delayElement(Duration.ofSeconds(1)))).take(2);
 
+        // from answers
+        alerts = nodeAlerts()
+            .repeatWhenEmpty( it -> it.delayElements(Duration.ofSeconds(2)))
+            .repeat();
+
         //don't change below this line
         StepVerifier.create(alerts.take(2))
                     .expectNext("node1:low_disk_space", "node1:down")
