@@ -2,6 +2,7 @@ import org.junit.jupiter.api.*;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 import reactor.test.StepVerifier;
+import reactor.util.retry.Retry;
 
 import java.time.Duration;
 import java.util.concurrent.TimeoutException;
@@ -193,7 +194,7 @@ public class c7_ErrorHandling extends ErrorHandlingBase {
      */
     @Test
     public void its_hot_in_here() {
-        Mono<Integer> temperature = temperatureSensor()
+        Mono<Integer> temperature = temperatureSensor().retry()
                 //todo: change this line only
                 ;
 
@@ -209,7 +210,7 @@ public class c7_ErrorHandling extends ErrorHandlingBase {
      */
     @Test
     public void back_off() {
-        Mono<String> connection_result = establishConnection()
+        Mono<String> connection_result = establishConnection().retryWhen(Retry.backoff(5,Duration.ofSeconds(2)))
                 //todo: change this line only
                 ;
 
@@ -226,8 +227,8 @@ public class c7_ErrorHandling extends ErrorHandlingBase {
     @Test
     public void good_old_polling() {
         //todo: change code as you need
-        Flux<String> alerts = null;
-        nodeAlerts();
+        Flux<String> alerts = Flux.range(1, Integer.MAX_VALUE)
+            .flatMap(i -> nodeAlerts().switchIfEmpty(nodeAlerts().delayElement(Duration.ofSeconds(1)))).take(2);
 
         //don't change below this line
         StepVerifier.create(alerts.take(2))
