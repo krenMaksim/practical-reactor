@@ -6,7 +6,9 @@ import reactor.core.Exceptions;
 import reactor.core.Scannable;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
+import reactor.core.publisher.ParallelFlux;
 import reactor.core.scheduler.NonBlocking;
+import reactor.core.scheduler.Scheduler;
 import reactor.core.scheduler.Schedulers;
 import reactor.test.StepVerifier;
 
@@ -133,11 +135,14 @@ public class c9_ExecutionControl extends ExecutionControlBase {
      */
     @Test
     public void free_runners() {
+        Scheduler s = Schedulers.newParallel("parallel-scheduler", 3);
+
         //todo: feel free to change code as you need
         Mono<Void> task = Mono.fromRunnable(ExecutionControlBase::blockingCall);
 
         Flux<Void> taskQueue = Flux.just(task, task, task)
-                                   .concatMap(Function.identity());
+                                    .parallel(3).runOn(s)
+                                    .flatMap(Function.identity()).sequential();
 
         //don't change code below
         Duration duration = StepVerifier.create(taskQueue)
