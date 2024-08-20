@@ -48,6 +48,7 @@ public class c9_ExecutionControl extends ExecutionControlBase {
         long threadId = Thread.currentThread().getId();
         Flux<String> notifications = readNotifications()
                 .doOnNext(System.out::println)
+                .delayElements(Duration.ofSeconds(1))
                 //todo: change this line only
                 ;
 
@@ -76,9 +77,7 @@ public class c9_ExecutionControl extends ExecutionControlBase {
     @Test
     public void ready_set_go() {
         //todo: feel free to change code as you need
-        Flux<String> tasks = tasks()
-                .flatMap(Function.identity());
-        semaphore();
+        Flux<String> tasks = tasks().zipWith(semaphore()).flatMap(tuple -> tuple.getT1());
 
         //don't change code below
         StepVerifier.create(tasks)
@@ -105,6 +104,7 @@ public class c9_ExecutionControl extends ExecutionControlBase {
                                   System.out.println("Task executing on: " + currentThread.getName());
                               })
                               //todo: change this line only
+                              .subscribeOn(Schedulers.parallel())
                               .then();
 
         StepVerifier.create(task)
