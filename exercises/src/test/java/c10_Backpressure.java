@@ -142,7 +142,7 @@ public class c10_Backpressure extends BackpressureBase {
      */
     @Test
     public void u_wont_brake_me() {
-        Flux<String> messageStream = messageStream4()
+        Flux<String> messageStream = messageStream4().onBackpressureBuffer()
                 //todo: change this line only
                 ;
 
@@ -180,12 +180,15 @@ public class c10_Backpressure extends BackpressureBase {
                     @Override
                     protected void hookOnSubscribe(Subscription subscription) {
                         sub.set(subscription);
+                        subscription.request(10);
                     }
 
                     @Override
                     protected void hookOnNext(String s) {
                         System.out.println(s);
-                        count.incrementAndGet();
+                        if (count.incrementAndGet()==10) {
+                            dispose();
+                        };
                     }
                     //-----------------------------------------------------
                 });
