@@ -14,6 +14,7 @@ import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
+import java.util.stream.LongStream;
 
 /**
  * Backpressure is a mechanism that allows a consumer to signal to a producer that it is ready receive data.
@@ -46,7 +47,7 @@ public class c10_Backpressure extends BackpressureBase {
     @Test
     public void request_and_demand() {
         CopyOnWriteArrayList<Long> requests = new CopyOnWriteArrayList<>();
-        Flux<String> messageStream = messageStream1()
+        Flux<String> messageStream = messageStream1().doOnRequest(requests::add)
                 //todo: change this line only
                 ;
 
@@ -71,6 +72,8 @@ public class c10_Backpressure extends BackpressureBase {
     public void limited_demand() {
         CopyOnWriteArrayList<Long> requests = new CopyOnWriteArrayList<>();
         Flux<String> messageStream = messageStream2()
+            .doOnRequest(requests::add)
+            .limitRate(1)
                 //todo: do your changes here
                 ;
 
@@ -94,6 +97,9 @@ public class c10_Backpressure extends BackpressureBase {
     @Test
     public void uuid_generator() {
         Flux<UUID> uuidGenerator = Flux.create(sink -> {
+            sink.onRequest(requested -> {
+                LongStream.range(0,requested).mapToObj(i -> UUID.randomUUID()).forEach(sink::next);
+            });
             //todo: do your changes here
         });
 
