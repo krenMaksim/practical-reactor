@@ -179,11 +179,15 @@ public class c9_ExecutionControl extends ExecutionControlBase {
      */
     @Test
     public void event_processor() {
+        Scheduler s = Schedulers.newParallel("parallel-scheduler", 3);
+
         //todo: feel free to change code as you need
         Flux<String> eventStream = eventProcessor()
+                .parallel(3).runOn(s)
                 .filter(event -> event.metaData.length() > 0)
                 .doOnNext(event -> System.out.println("Mapping event: " + event.metaData))
                 .map(this::toJson)
+                .sequential()
                 .concatMap(n -> appendToStore(n).thenReturn(n));
 
         //don't change code below
