@@ -71,7 +71,9 @@ public class c11_Batching extends BatchingBase {
      */
     @Test
     public void sum_over_time() {
-        Flux<Long> metrics = metrics()
+        Flux<Long> metrics = metrics().window(Duration.ofSeconds(1)).flatMap(mets -> {
+                return  mets.collectList().map(list -> list.stream().reduce(0L, Long::sum));
+            }).doOnNext(sum -> System.out.println("sum last second: " + sum))
                 //todo: implement your changes here
                 .take(10);
 
