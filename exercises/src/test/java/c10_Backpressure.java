@@ -121,7 +121,7 @@ public class c10_Backpressure extends BackpressureBase {
      */
     @Test
     public void pressure_is_too_much() {
-        Flux<String> messageStream = messageStream3()
+        Flux<String> messageStream = messageStream3().onBackpressureError()
                 //todo: change this line only
                 ;
 
