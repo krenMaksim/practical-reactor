@@ -31,7 +31,7 @@ public class c12_Broadcasting extends BroadcastingBase {
      */
     @Test
     public void sharing_is_caring() throws InterruptedException {
-        Flux<Message> messages = messageStream()
+        Flux<Message> messages = messageStream().cache()
                 //todo: do your changes here
                 ;
 
