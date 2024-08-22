@@ -60,7 +60,7 @@ public class c12_Broadcasting extends BroadcastingBase {
      */
     @Test
     public void hot_vs_cold() {
-        Flux<String> updates = systemUpdates().replay(0).autoConnect()
+        Flux<String> updates = systemUpdates().publish().autoConnect()
                 //todo: do your changes here
                 ;
 
