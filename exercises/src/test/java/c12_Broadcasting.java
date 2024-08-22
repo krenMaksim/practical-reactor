@@ -1,5 +1,6 @@
 import org.junit.jupiter.api.*;
 import reactor.core.publisher.Flux;
+import reactor.core.publisher.Sinks;
 import reactor.test.StepVerifier;
 
 import java.util.Arrays;
@@ -59,7 +60,7 @@ public class c12_Broadcasting extends BroadcastingBase {
      */
     @Test
     public void hot_vs_cold() {
-        Flux<String> updates = systemUpdates()
+        Flux<String> updates = systemUpdates().replay(0).autoConnect()
                 //todo: do your changes here
                 ;
 
