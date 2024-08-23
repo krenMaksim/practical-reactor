@@ -31,8 +31,9 @@ public class c13_Context extends ContextBase {
      * id to the Reactor context. Your task is to extract the correlation id and attach it to the message object.
      */
     public Mono<Message> messageHandler(String payload) {
-        //todo: do your changes withing this method
-        return Mono.just(new Message("set correlation_id from context here", payload));
+        return Mono.deferContextual(contextView -> {
+            return Mono.just(new Message (contextView.get(HTTP_CORRELATION_ID), payload));
+        });
     }
 
     @Test
@@ -52,10 +53,12 @@ public class c13_Context extends ContextBase {
      */
     @Test
     public void execution_counter() {
+        AtomicInteger counter = new AtomicInteger();
+
         Mono<Void> repeat = Mono.deferContextual(ctx -> {
             ctx.get(AtomicInteger.class).incrementAndGet();
             return openConnection();
-        });
+        }).contextWrite(ctx -> ctx.put(AtomicInteger.class, counter))
         //todo: change this line only
         ;
 
@@ -78,11 +81,22 @@ public class c13_Context extends ContextBase {
     public void pagination() {
         AtomicInteger pageWithError = new AtomicInteger(); //todo: set this field when error occurs
 
+        AtomicInteger pageNumber = new AtomicInteger();
+
         //todo: start from here
-        Flux<Integer> results = getPage(0)
+        Flux<Integer> results = Mono.deferContextual(ctx -> {
+                    return  getPage(ctx.get(AtomicInteger.class).getAndIncrement());
+                })
+                .onErrorResume(err -> {
+                    return Mono.deferContextual( ctx -> {
+                        pageWithError.set(ctx.get(AtomicInteger.class).get()-1);
+                        return Mono.empty();
+                    });
+                })
                 .flatMapMany(Page::getResult)
                 .repeat(10)
-                .doOnNext(i -> System.out.println("Received: " + i));
+                .doOnNext(i -> System.out.println("Received: " + i))
+                .contextWrite(ctx -> ctx.put(AtomicInteger.class, pageNumber));
 
 
         //don't change this code
